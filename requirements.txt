@@ -1,0 +1,10 @@
+pandas>=2.0
+pyarrow
+xlrd>=2.0.1
+xgboost
+scikit-learn
+scipy
+numpy
+pytest
+python-dotenv
+google-generativeai
