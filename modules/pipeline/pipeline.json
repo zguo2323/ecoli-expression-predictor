@@ -1,0 +1,17 @@
+{
+  "id": "org.bioe234.build_dataset",
+  "name": "Build Expression Dataset",
+  "description": "Loads and joins the three Kosuri et al. supplementary tables into a single clean dataset of promoter-RBS constructs with measured expression levels. Returns path to saved parquet file.",
+  "type": "function",
+  "inputs": [
+    {"name": "sd01_path", "type": "string"},
+    {"name": "sd02_path", "type": "string"},
+    {"name": "sd03_path", "type": "string"}
+  ],
+  "outputs": [{"name": "output_path", "type": "string"}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "build_dataset",
+    "seq_params": ["sd01_path", "sd02_path", "sd03_path"]
+  }
+}
