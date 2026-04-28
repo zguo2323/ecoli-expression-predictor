@@ -1,0 +1,14 @@
+{
+  "id": "org.bioe234.score_minus35_box",
+  "name": "Promoter -35 Box Scorer",
+  "description": "Scores how well a promoter sequence matches the E. coli -35 consensus (TTGACA) using a sliding window position weight matrix. Returns 0.0 (no match) to 1.0 (perfect match). Higher scores indicate stronger RNA polymerase recognition.",
+  "type": "function",
+  "inputs": [{"name": "promoter_seq", "type": "string"}],
+  "outputs": [{"name": "score", "type": "number"}],
+  "examples": [{"input": {"promoter_seq": "AAATTGACAAAA"}, "output": 1.0}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "score_minus35_box",
+    "seq_params": ["promoter_seq"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "org.bioe234.get_sd_spacing",
+  "name": "Shine-Dalgarno Spacing Calculator",
+  "description": "Returns the distance in nucleotides between the end of the best Shine-Dalgarno match and the end of the RBS sequence (a proxy for distance to the AUG start codon). Optimal spacing is 5-10 nt. Returns -1 if no SD element is found.",
+  "type": "function",
+  "inputs": [{"name": "rbs_seq", "type": "string"}],
+  "outputs": [{"name": "spacing", "type": "integer"}],
+  "examples": [{"input": {"rbs_seq": "AGGAGGAAAAAAA"}, "output": 7}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "get_sd_spacing",
+    "seq_params": ["rbs_seq"]
+  }
+}

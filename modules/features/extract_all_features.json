@@ -1,0 +1,34 @@
+{
+  "id": "org.bioe234.extract_all_features",
+  "name": "Full Feature Extractor",
+  "description": "Computes all biologically meaningful features for a promoter-RBS pair: GC content, -10 and -35 box scores, spacer length, Shine-Dalgarno score and spacing, and mRNA junction folding energy (via ViennaRNA). Use this for a complete feature breakdown of any construct.",
+  "type": "function",
+  "inputs": [
+    {"name": "promoter_seq", "type": "string"},
+    {"name": "rbs_seq", "type": "string"}
+  ],
+  "outputs": [{"name": "features", "type": "object"}],
+  "examples": [{
+    "input": {
+      "promoter_seq": "TTGACATATAATCCGG",
+      "rbs_seq": "AAAGAGGAGAAATTTA"
+    },
+    "output": {
+      "gc_promoter": 0.4375,
+      "gc_rbs": 0.25,
+      "score_minus10": 1.0,
+      "score_minus35": 1.0,
+      "spacer_length": 0,
+      "spacer_optimal": false,
+      "score_sd": 0.833,
+      "sd_spacing": 6,
+      "sd_spacing_optimal": true,
+      "mrna_folding_energy": -3.2
+    }
+  }],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "extract_all_features",
+    "seq_params": ["promoter_seq", "rbs_seq"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "org.bioe234.get_spacer_length",
+  "name": "Promoter Spacer Length Calculator",
+  "description": "Returns the distance in nucleotides between the end of the -35 element and the start of the -10 element in a promoter sequence. Optimal spacer length is 17 nt (functional range: 15-21 nt). Returns -1 if either element is not found.",
+  "type": "function",
+  "inputs": [{"name": "promoter_seq", "type": "string"}],
+  "outputs": [{"name": "spacer_length", "type": "integer"}],
+  "examples": [{"input": {"promoter_seq": "TTGACAAAAAAAAAAAAAAAAATATAATCC"}, "output": 17}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "get_spacer_length",
+    "seq_params": ["promoter_seq"]
+  }
+}
