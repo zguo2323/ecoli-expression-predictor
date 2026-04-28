@@ -1,6 +1,7 @@
-# BioE234 Final Project — Predictive Expression Modeling for E. coli
+# Predictive Expression Modeling for E. coli
 
 An MCP server that predicts protein expression levels in *E. coli* from promoter and RBS sequences. Trained on Kosuri et al. 2013 (~12,500 characterized constructs).
+UC Berkeley BioE234 Sp 2026 Final Project
 
 ## Setup
 
