@@ -1,0 +1,16 @@
+{
+  "id": "org.bioe234.rank_rbs_for_promoter",
+  "name": "RBS Ranker for Target Promoter",
+  "description": "Given a promoter sequence, scores all RBS sequences in the Kosuri characterized library and returns the top N ranked by predicted protein expression. Rankings are context-dependent: mRNA folding energy is computed for each specific promoter-RBS junction, so the same RBS library will rank differently for different promoters.",
+  "type": "function",
+  "inputs": [
+    {"name": "promoter_seq", "type": "string"},
+    {"name": "top_n", "type": "integer"}
+  ],
+  "outputs": [{"name": "ranked_rbs", "type": "array"}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "rank_rbs_for_promoter",
+    "seq_params": ["promoter_seq"]
+  }
+}

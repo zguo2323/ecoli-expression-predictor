@@ -1,0 +1,23 @@
+{
+  "id": "org.bioe234.compute_mrna_folding_energy",
+  "name": "mRNA Junction Folding Energy Calculator",
+  "description": "Computes the minimum free energy (MFE) of the mRNA secondary structure formed at the junction between a promoter's 3' end and an RBS sequence. A more negative value means the RBS is more likely to be occluded by folding, reducing ribosome access and translation. Use this to evaluate whether a promoter-RBS pair is structurally compatible, not just sequence-compatible.",
+  "type": "function",
+  "inputs": [
+    {"name": "promoter_seq", "type": "string"},
+    {"name": "rbs_seq", "type": "string"}
+  ],
+  "outputs": [{"name": "mrna_folding_energy", "type": "number"}],
+  "examples": [{
+    "input": {
+      "promoter_seq": "TTGACATATAATCCGG",
+      "rbs_seq": "AAAGAGGAGAAATTTA"
+    },
+    "output": -3.2
+  }],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "compute_mrna_folding_energy",
+    "seq_params": ["promoter_seq", "rbs_seq"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "org.bioe234.compute_gc_content",
+  "name": "GC Content Calculator",
+  "description": "Computes the GC fraction of a DNA sequence. Returns a value from 0.0 (no GC) to 1.0 (all GC). GC content affects mRNA stability and secondary structure propensity.",
+  "type": "function",
+  "inputs": [{"name": "seq", "type": "string"}],
+  "outputs": [{"name": "gc_content", "type": "number"}],
+  "examples": [{"input": {"seq": "ATGC"}, "output": 0.5}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "compute_gc_content",
+    "seq_params": ["seq"]
+  }
+}

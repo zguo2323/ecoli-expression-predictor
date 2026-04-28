@@ -1,0 +1,14 @@
+{
+  "id": "org.bioe234.score_sd_sequence",
+  "name": "Shine-Dalgarno Sequence Scorer",
+  "description": "Scores how well an RBS sequence matches the E. coli Shine-Dalgarno consensus (AGGAGG) using a sliding window position weight matrix. Returns 0.0 (no match) to 1.0 (perfect match). Higher scores indicate stronger ribosome binding.",
+  "type": "function",
+  "inputs": [{"name": "rbs_seq", "type": "string"}],
+  "outputs": [{"name": "score", "type": "number"}],
+  "examples": [{"input": {"rbs_seq": "AAAGGAGGAAAA"}, "output": 1.0}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "score_sd_sequence",
+    "seq_params": ["rbs_seq"]
+  }
+}

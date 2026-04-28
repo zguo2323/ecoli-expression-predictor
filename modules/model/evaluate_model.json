@@ -1,0 +1,20 @@
+{
+  "id": "org.bioe234.evaluate_model",
+  "name": "Model Performance Evaluator",
+  "description": "Evaluates the trained expression prediction model on the held-out test set. Returns Spearman correlation, R-squared, and mean absolute error. Use this to assess model reliability before trusting predictions.",
+  "type": "function",
+  "inputs": [
+    {"name": "parquet_path", "type": "string"}
+  ],
+  "outputs": [
+    {"name": "spearman_r", "type": "number"},
+    {"name": "r2", "type": "number"},
+    {"name": "mae", "type": "number"},
+    {"name": "n_test", "type": "integer"}
+  ],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "evaluate_model",
+    "seq_params": ["parquet_path"]
+  }
+}

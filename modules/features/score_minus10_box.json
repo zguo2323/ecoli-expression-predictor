@@ -1,0 +1,14 @@
+{
+  "id": "org.bioe234.score_minus10_box",
+  "name": "Promoter -10 Box Scorer",
+  "description": "Scores how well a promoter sequence matches the E. coli -10 consensus (TATAAT) using a sliding window position weight matrix. Returns 0.0 (no match) to 1.0 (perfect match). Higher scores indicate stronger transcription initiation signals.",
+  "type": "function",
+  "inputs": [{"name": "promoter_seq", "type": "string"}],
+  "outputs": [{"name": "score", "type": "number"}],
+  "examples": [{"input": {"promoter_seq": "TTGACATATAATCCGG"}, "output": 1.0}],
+  "execution_details": {
+    "execution": "run",
+    "mcp_name": "score_minus10_box",
+    "seq_params": ["promoter_seq"]
+  }
+}
