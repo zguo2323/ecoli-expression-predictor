@@ -98,6 +98,30 @@ def compute_mrna_folding_energy(promoter_seq: str, rbs_seq: str) -> float:
     return float(mfe)
 
 
+class FeaturesMCP:
+    def __init__(self, config):
+        self.config = config
+
+    def initiate(self):
+        pass
+
+    def run(self, **kwargs):
+        mcp_name = self.config.get("execution_details", {}).get("mcp_name")
+        dispatch = {
+            "compute_gc_content":          lambda: compute_gc_content(kwargs["seq"]),
+            "score_minus10_box":           lambda: score_minus10_box(kwargs["promoter_seq"]),
+            "score_minus35_box":           lambda: score_minus35_box(kwargs["promoter_seq"]),
+            "get_spacer_length":           lambda: get_spacer_length(kwargs["promoter_seq"]),
+            "score_sd_sequence":           lambda: score_sd_sequence(kwargs["rbs_seq"]),
+            "get_sd_spacing":              lambda: get_sd_spacing(kwargs["rbs_seq"]),
+            "compute_mrna_folding_energy": lambda: compute_mrna_folding_energy(kwargs["promoter_seq"], kwargs["rbs_seq"]),
+            "extract_all_features":        lambda: extract_all_features(kwargs["promoter_seq"], kwargs["rbs_seq"]),
+        }
+        if mcp_name not in dispatch:
+            raise ValueError(f"Unknown mcp_name: {mcp_name}")
+        return dispatch[mcp_name]()
+
+
 def extract_all_features(promoter_seq: str, rbs_seq: str) -> dict:
     spacer = get_spacer_length(promoter_seq)
     sd_spacing = get_sd_spacing(rbs_seq)
