@@ -96,8 +96,6 @@ Once connected, try these:
 
 ## Sample Agent Run
 
-The following is a real interaction with Claude using the MCP server, demonstrating cross-tool reasoning — Claude automatically chains multiple tool calls to answer a single question:
-
 **You:** I designed a new synthetic promoter: TTGACATATAATCCGGAATTC. Is it likely to be strong? What's the best RBS to pair it with?
 
 **Tool calls made by Claude:**
