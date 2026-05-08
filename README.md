@@ -1,43 +1,6 @@
-#    BioE234 Final Project — Predictive Expression Modeling for E. coli
+# Predictive Expression Modeling for E. coli
 
-An MCP server that predicts protein expression levels in *E. coli* from promoter and RBS sequences, trained on Kosuri et al. 2013 (~12,500 characterized constructs). A connected LLM (Gemini) can call the tools interactively to reason about construct design.
-
----
-
-## Modules
-
-### Module A — Data Pipeline (`modules/pipeline/`)
-
-Loads and joins the three Kosuri et al. supplementary tables (`sd01.xls`, `sd02.xls`, `sd03.xls`) into a single clean dataset. Strips quoted string values, filters out flagged low-quality constructs, and merges promoter and RBS sequences with their measured expression levels. Outputs `data/processed/constructs.parquet` (~11,700 rows).
-
-### Module B — Feature Extraction (`modules/features/`)
-
-Translates raw DNA sequences into biologically meaningful numerical features used by the model. All functions are pure and deterministic. Features extracted:
-
-- **−10 and −35 box scores** — sliding-window PWM match against the *E. coli* sigma-70 consensus elements (`TATAAT` and `TTGACA`), which RNA polymerase recognizes to initiate transcription
-- **Spacer length** — distance between the −35 and −10 elements (optimal: 17 nt)
-- **Shine-Dalgarno score and spacing** — PWM match against the ribosome binding consensus `AGGAGG` and its distance to the start codon (optimal: 5–10 nt)
-- **GC content** — for both promoter and RBS sequences
-- **mRNA junction folding energy** — minimum free energy (MFE) of the mRNA secondary structure formed at the junction between the promoter's 3′ end and the RBS, computed using ViennaRNA
-
-> **Feedback from Demo Day:** Our professor noted that without modeling mRNA secondary structure, the RBS ranking would always return the same winner regardless of promoter context, because RBS features were computed in isolation. We addressed this by adding `compute_mrna_folding_energy`, which folds the specific promoter+RBS junction sequence using ViennaRNA. The same RBS can have different accessibility depending on what's upstream of it — a GC-rich promoter tail can form a stem-loop that occludes the Shine-Dalgarno sequence, suppressing translation even if the SD sequence itself is strong. This makes `rank_rbs_for_promoter` genuinely context-dependent: the top-ranked RBS will differ for different promoters.
-
-### Module C — Model (`modules/model/`)
-
-Trains a gradient-boosted model on the featurized dataset and exposes prediction and ranking as MCP tools.
-
-**What is XGBoost and why do we use it?**
-XGBoost (Extreme Gradient Boosting) is a machine learning algorithm that builds an ensemble of decision trees sequentially, where each new tree corrects the errors of the previous ones. It is well-suited for this task because:
-- The relationship between sequence features and expression is highly non-linear and cannot be captured by a linear model
-- XGBoost handles the mixed feature types we use (continuous scores, integer spacer lengths, boolean flags) without requiring normalization
-- It performs well on tabular datasets of this size (~11,700 rows, 10 features) without overfitting
-- It is fast to train and produces feature importance scores that help interpret which biological signals matter most
-
-We train on an 80/10/10 train/val/test split stratified by expression level bin to ensure all parts of the expression range are represented. The trained model achieves a **Spearman r = 0.83** on the held-out test set, meaning it ranks constructs by expression level with high accuracy.
-
-At inference time, the model uses the same 10 computed sequence features for any novel promoter+RBS pair — no precomputed data required.
-
----
+An MCP server that predicts protein expression levels in *E. coli* from promoter and RBS sequences. Trained on Kosuri et al. 2013 (~12,500 characterized constructs). UC Berkeley BioE234 Sp 2026 Final Project.
 
 ## Setup
 
