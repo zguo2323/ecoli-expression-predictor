@@ -7,4 +7,6 @@ scipy
 numpy
 pytest
 python-dotenv
-google-generativeai
+google-genai
+fastmcp
+ViennaRNA
