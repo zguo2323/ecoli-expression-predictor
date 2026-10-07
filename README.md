@@ -1,173 +1,105 @@
-# Predictive Expression Modeling for E. coli
+# E. coli Expression Predictor
 
-An MCP server that predicts protein expression levels in *E. coli* from promoter and RBS sequences. Trained on Kosuri et al. 2013 (~12,500 characterized constructs). UC Berkeley BioE234 Sp 2026 Final Project.
+An MCP server for **pre-experiment prioritization** of *E. coli* promoter–RBS designs. It uses an XGBoost model trained on the Kosuri et al. 2013 promoter/RBS library and exposes sequence-feature explanations alongside candidate predictions.
 
-## Modules
+The output is the model's prediction of the dataset's `prot` target. It is useful for comparing and prioritizing candidates in the same reporter and experimental context; it is **not an absolute protein concentration, a probability, or a calibrated confidence interval**. Predictions for promoter/RBS identities absent from training are less certain, especially when both are new.
 
-### Module A — Data Pipeline (`modules/pipeline/`)
+## What the model uses
 
-Loads and joins the three Kosuri et al. supplementary tables (`sd01.xls`, `sd02.xls`, `sd03.xls`) into a single clean dataset. Strips quoted string values, filters out flagged low-quality constructs, and merges promoter and RBS sequences with their measured expression levels. Outputs `data/processed/constructs.parquet` (~11,700 rows).
+The model combines promoter features (−10/−35 consensus scores, spacer length and GC content), RBS features (Shine–Dalgarno score and spacing, GC content), and transcript-context accessibility features. The latter estimate Shine–Dalgarno and start-codon accessibility by ViennaRNA folding from a measured transcription start site (TSS) through a provisional 90-nt sfGFP coding context.
 
-### Module B — Feature Extraction (`modules/features/`)
+For an untested design, a measured `tss_best` is usually unavailable. If it is missing, the assistant asks once whether you have a measured value for a sufficiently matching construct context. If you provide one, it is used; if you do not have one, are unsure, or want to proceed, prediction and ranking continue without TSS-derived accessibility features. The value is an integer offset from the promoter/RBS junction; do not guess one. The sfGFP reference sequence is provisional and has not been verified base-by-base against the Addgene plasmid record. See the [transcript-context data dictionary](docs/transcript_context_data_dictionary.md).
 
-Translates raw DNA sequences into biologically meaningful numerical features used by the model. All functions are pure and deterministic. Features extracted:
+Biological validation compares sequence-only and accessibility models against baselines using grouped cross-validation, group bootstrap, held-out feature-group permutation, and out-of-fold residual analysis. Results and limitations are summarized in [`reports/biological_context/summary.md`](reports/biological_context/summary.md).
 
-- **−10 and −35 box scores** — sliding-window PWM match against the *E. coli* sigma-70 consensus elements (`TATAAT` and `TTGACA`), which RNA polymerase recognizes to initiate transcription
-- **Spacer length** — distance between the −35 and −10 elements (optimal: 17 nt)
-- **Shine-Dalgarno score and spacing** — PWM match against the ribosome binding consensus `AGGAGG` and its distance to the start codon (optimal: 5–10 nt)
-- **GC content** — for both promoter and RBS sequences
-- **mRNA junction folding energy** — minimum free energy (MFE) of the mRNA secondary structure formed at the junction between the promoter's 3′ end and the RBS, computed using ViennaRNA
+## MCP tools
 
-> **Feedback from Demo Day:** Our professor noted that without modeling mRNA secondary structure, the RBS ranking would always return the same winner regardless of promoter context, because RBS features were computed in isolation. We addressed this by adding `compute_mrna_folding_energy`, which folds the specific promoter+RBS junction sequence using ViennaRNA. The same RBS can have different accessibility depending on what's upstream of it — a GC-rich promoter tail can form a stem-loop that occludes the Shine-Dalgarno sequence, suppressing translation even if the SD sequence itself is strong. This makes `rank_rbs_for_promoter` genuinely context-dependent: the top-ranked RBS will differ for different promoters.
+The server exposes nine tools. The feature tools report interpretable sequence descriptors; the two model tools support design decisions.
 
-### Module C — Model (`modules/model/`)
+| Tool | Inputs | Use |
+|---|---|---|
+| `predict_expression` | `promoter_seq`, `rbs_seq`, optional measured `tss_best` | Predict the dataset `prot` target for one construct; returns the features used and whether transcript-context features were available. |
+| `rank_rbs_for_promoter` | `promoter_seq`, `top_n`, optional measured `tss_best` | Rank candidate RBSs from the characterized Kosuri library for a promoter. |
+| `extract_all_features` | `promoter_seq`, `rbs_seq`, optional measured `tss_best` | Return promoter/RBS sequence features and, when possible, transcript accessibility estimates. |
+| `score_minus10_box` | `promoter_seq` | Score the −10 consensus match. |
+| `score_minus35_box` | `promoter_seq` | Score the −35 consensus match. |
+| `get_spacer_length` | `promoter_seq` | Estimate the distance between the best −35 and −10 matches. |
+| `score_sd_sequence` | `rbs_seq` | Score the Shine–Dalgarno consensus match. |
+| `get_sd_spacing` | `rbs_seq` | Estimate SD-to-start spacing. |
+| `compute_gc_content` | `seq` | Calculate GC fraction. |
 
-Trains a gradient-boosted model on the featurized dataset and exposes prediction and ranking as MCP tools.
-
-**What is XGBoost and why do we use it?**
-XGBoost (Extreme Gradient Boosting) is a machine learning algorithm that builds an ensemble of decision trees sequentially, where each new tree corrects the errors of the previous ones. It is well-suited for this task because:
-- The relationship between sequence features and expression is highly non-linear and cannot be captured by a linear model
-- XGBoost handles the mixed feature types we use (continuous scores, integer spacer lengths, boolean flags) without requiring normalization
-- It performs well on tabular datasets of this size (~11,700 rows, 10 features) without overfitting
-- It is fast to train and produces feature importance scores that help interpret which biological signals matter most
-
-We train on an 80/10/10 train/val/test split stratified by expression level bin to ensure all parts of the expression range are represented. The trained model achieves a **Spearman r = 0.83** on the held-out test set, meaning it ranks constructs by expression level with high accuracy.
-
-At inference time, the model uses the same 10 computed sequence features for any novel promoter+RBS pair — no precomputed data required.
-
----
+The old promoter-tail MFE calculator is not exposed: promoter sequence upstream of the measured TSS is not a faithful RNA folding context. Dataset building and model evaluation are offline project workflows, not conversational MCP tools. Their Python functions and evaluation scripts remain available in the repository.
 
 ## Setup
 
-**Install dependencies:**
+Requires Python 3.10+ and the dependencies in `requirements.txt`. On macOS, XGBoost may also require OpenMP (`brew install libomp`).
+
 ```bash
-pip install -r requirements.txt
-brew install libomp   # required for XGBoost on macOS
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
-**Add your Gemini API key to `.env`:**
-```
-GEMINI_API_KEY=your_key_here
-```
+The repository includes the Kosuri supplementary files in `data/raw/`. Build the processed dataset and train the model once:
 
-The raw data files are included in the repository under `data/raw/`:
-- `sd01.xls` — promoter sequences and measured expression
-- `sd02.xls` — RBS sequences and measured expression
-- `sd03.xls` — all promoter×RBS construct combinations
-
----
-
-## Running the Project
-
-**Step 1 — Build the dataset** (produces `data/processed/constructs.parquet`):
 ```bash
-python3 -c "
-from modules.pipeline.pipeline import build_dataset
-build_dataset('data/raw/sd01.xls', 'data/raw/sd02.xls', 'data/raw/sd03.xls')
-"
+.venv/bin/python -c "from modules.pipeline.pipeline import build_dataset; build_dataset('data/raw/sd01.xls', 'data/raw/sd02.xls', 'data/raw/sd03.xls')"
+.venv/bin/python -c "from modules.model.model import train_model; train_model('data/processed/constructs.parquet')"
 ```
 
-**Step 2 — Train the model** (produces `artifacts/model.pkl`):
-```bash
-python3 -c "
-from modules.model.model import train_model
-train_model('data/processed/constructs.parquet')
-"
-```
+This creates `data/processed/constructs.parquet` and `artifacts/model.pkl`. The MCP model tools need the trained artifact at the default path.
 
-**Step 3 — Run tests:**
-```bash
-pytest tests/
-```
+## Connect an MCP client
 
-**Step 4 — Start the MCP server + Gemini client:**
-```bash
-python3 client_gemini.py
-```
-
----
-
-## Connecting to MCP Clients
-
-The MCP server can be connected to any MCP-compatible LLM client. Add the server to your client's configuration using the following pattern:
+Add the server to your MCP client's configuration, replacing the paths with the absolute paths on your machine:
 
 ```json
 {
   "mcpServers": {
     "ecoli-expression-predictor": {
-      "command": "/path/to/your/.venv/bin/python3",
-      "args": ["/path/to/bioe234-final-project/server.py"],
-      "cwd": "/path/to/bioe234-final-project"
+      "command": "/absolute/path/to/ecoli-expression-predictor/.venv/bin/python",
+      "args": ["/absolute/path/to/ecoli-expression-predictor/server.py"],
+      "cwd": "/absolute/path/to/ecoli-expression-predictor"
     }
   }
 }
 ```
 
-| Client | Config file location |
-|---|---|
-| **Claude Desktop** | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| **Cursor** | `.cursor/mcp.json` in your project root |
-| **VS Code (Copilot)** | `.vscode/mcp.json` in your project root |
+Restart the client after saving the configuration. `server.py` loads the tool definitions from `modules/` and registers the nine tools above.
 
-After adding the config, restart the client and the 12 tools will be available automatically.
+To use the optional Gemini demo client instead of another MCP host, copy `.env.example` to `.env`, add a Gemini API key, then run:
 
----
-
-## Example Prompts
-
-Once connected, try these:
-
-```
-"I have a promoter sequence TTGACAAATATTTGTATAAT. How strong is its -10 box? What about its -35 box?"
-
-"Predict the protein expression level for promoter TTGACATATAATCC paired with RBS AAAGAGGAGAAA."
-
-"Rank the top 5 RBS sequences for maximum protein output with promoter TTGACATATAATCC."
-
-"Compare these two constructs: promoter TTGACATATAATCC + RBS AAAGAGGAGAAA versus promoter TTTACATATAATCC + RBS AGGATGT. Which will express more highly and why?"
+```bash
+.venv/bin/python client_gemini.py
 ```
 
----
+## Example prompts
 
-## Sample Agent Run
+- “Compare these promoter and RBS candidates using predicted expression and explain which sequence features differ.”
+- “Rank the top five RBSs from the characterized library for this promoter.”
+- “Show the −10/−35 scores and spacer length for this promoter.”
+- “Compare Shine–Dalgarno score and spacing for these RBSs.”
 
-**You:** I designed a new synthetic promoter: TTGACATATAATCCGGAATTC. Is it likely to be strong? What's the best RBS to pair it with?
+For untested constructs, the assistant should omit `tss_best` unless a matching measured value is available. Treat returned values as prioritization signals and confirm promising designs experimentally.
 
-**Tool calls made by Claude:**
-```
-→ score_minus10_box(promoter_seq="TTGACATATAATCCGGAATTC")  →  1.0
-→ score_minus35_box(promoter_seq="TTGACATATAATCCGGAATTC")  →  1.0
-→ get_spacer_length(promoter_seq="TTGACATATAATCCGGAATTC")  →  0
-→ rank_rbs_for_promoter(promoter_seq="TTGACATATAATCCGGAATTC", top_n=1)
-  → [{"rbs_id": "B0030_RBS", "predicted_prot": 231757.36}]
-```
+## Evaluation and project structure
 
-**Claude:** While your promoter has perfect scores for both the −10 and −35 boxes (1.0 each), which suggests strong RNA polymerase recognition and transcription initiation signals, the spacer length between these elements is 0 nucleotides. An optimal spacer length is typically 17 nucleotides (functional range: 15–21 nt), so this significantly suboptimal spacing might reduce the overall strength of your promoter.
+The main assessment uses row-random, promoter-held-out, RBS-held-out, and double-unseen splits so familiar-part performance is not confused with generalization to new parts. It also includes Ridge and OSTIR comparisons. Results, split definitions, feature importance, error analysis, and limitations are in the [biological-context benchmark summary](reports/biological_context/summary.md). Run the project tests with:
 
-The best RBS to pair with your promoter for maximum protein output is **B0030_RBS** (`ATTAAAGAGGAGAAATTA CATATG`). This combination is predicted to yield a protein output of **231,757 units**.
-
----
-
-## Project Structure
-
-```
-project/
-├── data/
-│   ├── raw/              # sd01.xls, sd02.xls, sd03.xls (Kosuri et al. supplementary data)
-│   └── processed/        # constructs.parquet (generated by Step 1)
-├── modules/
-│   ├── pipeline/         # Module A: data loading and joining
-│   ├── features/         # Module B: biological feature extraction
-│   └── model/            # Module C: XGBoost training and prediction
-├── artifacts/            # model.pkl (generated by Step 2, not committed)
-├── tests/                # 29 unit tests across all three modules
-├── server.py             # MCP server — scans modules/ and registers all tools
-├── client_gemini.py      # Gemini LLM client
-└── SPEC.md               # full project specification
+```bash
+.venv/bin/python -m pytest -p no:capture tests/
 ```
 
----
+```text
+modules/features/     sequence feature extraction and MCP schemas
+modules/model/        model training, prediction, ranking, and MCP schemas
+modules/pipeline/     offline data preparation
+scripts/              grouped validation and benchmark workflows
+reports/              saved metrics, importance, and error analyses
+docs/                 stage log, biological context, and project status
+server.py             MCP server
+client_gemini.py      optional Gemini example client
+```
 
-## Data Source
+## Data source
 
-Kosuri et al. (2013). *Composability of regulatory sequences controlling transcription and translation in Escherichia coli.* PNAS. [doi:10.1073/pnas.1301301110](https://doi.org/10.1073/pnas.1301301110)
+Kosuri et al. (2013), “Composability of regulatory sequences controlling transcription and translation in *Escherichia coli*,” *PNAS*. [doi:10.1073/pnas.1301301110](https://doi.org/10.1073/pnas.1301301110).

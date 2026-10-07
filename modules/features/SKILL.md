@@ -6,7 +6,6 @@ Translates raw DNA sequences into biologically meaningful numerical features. Al
 ## When to use
 - Use `extract_all_features` when the user wants a complete breakdown of a promoter+RBS pair
 - Use individual tools (`score_minus10_box`, `score_minus35_box`, `score_sd_sequence`, etc.) when the user asks about a specific element
-- Use `compute_mrna_folding_energy` when the user asks about structural compatibility between a specific promoter and RBS
 
 ## Tools at a glance
 | Tool | Input | What it tells you |
@@ -17,12 +16,12 @@ Translates raw DNA sequences into biologically meaningful numerical features. Al
 | `score_sd_sequence` | rbs_seq | Strength of the Shine-Dalgarno element (0–1) |
 | `get_sd_spacing` | rbs_seq | Distance from SD end to start codon proxy (optimal: 5–10 nt) |
 | `compute_gc_content` | seq | GC fraction (0–1) |
-| `compute_mrna_folding_energy` | promoter_seq, rbs_seq | MFE of the mRNA junction (kcal/mol) — more negative means RBS is more occluded |
-| `extract_all_features` | promoter_seq, rbs_seq | All of the above in one call |
+| `extract_all_features` | promoter_seq, rbs_seq, optional measured tss_best | All sequence features; with measured TSS, also provisional transcript accessibility estimates |
 
 ## Notes
 - Sequences can be any length and any case — functions handle uppercase conversion internally
-- `compute_mrna_folding_energy` is context-dependent: the same RBS will score differently paired with different promoters
-- A more negative `mrna_folding_energy` is generally worse for translation — the RBS is buried in secondary structure
 - `spacer_optimal` is True for 15–21 nt; `sd_spacing_optimal` is True for 5–10 nt
 - Prefer `extract_all_features` when doing construct comparison — it gives the full picture in one tool call
+- TSS-derived accessibility values require a measured TSS and use a provisional reporter CDS context; if the TSS is unknown, omit it rather than guessing
+- Feature scores are sequence-based heuristics and should not be presented as causal measurements of promoter or RBS activity
+- When the user requests full feature extraction but provides no TSS, ask once whether they have a matching measured `tss_best`; if not or unsure, proceed without accessibility estimates and do not ask again for the same construct context

@@ -1,0 +1,12 @@
+{
+  "input_rows": 11696,
+  "predicted_rows": 11672,
+  "unscored_rows": 24,
+  "coverage": 0.9979480164158687,
+  "ostir_env": "ostir-b7",
+  "ostir_version": "OSTIR version 1.1.1",
+  "viennarna_cli_version": "RNAfold 2.7.2",
+  "predictions": "ostir_predictions.csv",
+  "input": "ostir_input.csv",
+  "viennarna_python_version": "2.7.2"
+}

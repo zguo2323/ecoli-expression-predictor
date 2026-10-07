@@ -1,6 +1,7 @@
 import importlib.util
 import inspect
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -38,18 +39,32 @@ def _make_tool_fn(instance, inputs, tool_name, description):
     def tool_fn(**kwargs):
         result = instance.run(**kwargs)
         if isinstance(result, (dict, list)):
-            return json.dumps(result, indent=2)
+            return json.dumps(_json_safe(result), indent=2, allow_nan=False)
         return str(result)
 
-    sig_params = [
-        inspect.Parameter(pname, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=ptype)
-        for pname, ptype in zip(param_names, param_types)
-    ]
+    sig_params = []
+    for inp, pname, ptype in zip(inputs, param_names, param_types):
+        default = None if inp.get("required", True) is False else inspect.Parameter.empty
+        sig_params.append(inspect.Parameter(
+            pname, inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            default=default, annotation=ptype,
+        ))
     tool_fn.__signature__ = inspect.Signature(sig_params)
     tool_fn.__annotations__ = {pname: ptype for pname, ptype in zip(param_names, param_types)}
     tool_fn.__name__ = tool_name
     tool_fn.__doc__ = description
     return tool_fn
+
+
+def _json_safe(value):
+    """Replace non-finite floats with JSON null for strict MCP clients."""
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
 
 
 registered = []
