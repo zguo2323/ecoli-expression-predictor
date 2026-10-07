@@ -1,0 +1,39 @@
+{
+  "n_permutations_per_group_fold_target": 30,
+  "random_state": 42,
+  "feature_groups": {
+    "promoter_recognition": [
+      "gc_promoter",
+      "score_minus10",
+      "score_minus35",
+      "spacer_length",
+      "spacer_optimal"
+    ],
+    "rbs_recognition": [
+      "gc_rbs",
+      "score_sd",
+      "sd_spacing",
+      "sd_spacing_optimal"
+    ],
+    "transcript_accessibility": [
+      "sd_unpaired_probability",
+      "start_unpaired_probability",
+      "sd_start_opening_energy"
+    ]
+  },
+  "permutation_units": {
+    "promoter_recognition": [
+      "promoter_id"
+    ],
+    "rbs_recognition": [
+      "rbs_id"
+    ],
+    "transcript_accessibility": [
+      "promoter_id",
+      "rbs_id"
+    ]
+  },
+  "outer_folds": 5,
+  "aggregation": "Joint permutation within each feature group at its biological unit (promoter, RBS, or promoter-RBS pair); repeated rows within a unit receive the same values. permutation repeats averaged within fold, followed by equal-fold mean and SD across the fixed outer folds.",
+  "interpretation": "Positive delta_spearman and delta_mae_log indicate that permuting the group degraded predictions. This is model reliance, not causality."
+}

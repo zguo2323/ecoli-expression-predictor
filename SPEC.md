@@ -1,6 +1,8 @@
 # BioE234 Final Project – Predictive Expression Modeling for E. coli
 ## Spec for Claude Code
 
+> Historical implementation proposal. The repository now includes measured-TSS transcript-context features, grouped biological validation, and a smaller conversational MCP surface. For the current exposed tools and user-facing limitations, use [README.md](README.md) and the JSON definitions in `modules/`; some design details below describe the original implementation and are no longer current.
+
 ---
 
 ## Project Goal
@@ -412,13 +414,11 @@ def predict_expression(
          [includes mrna_folding_energy, computed fresh for novel sequences]
       2. Load model from model_path
       3. Predict on feature vector
-      4. Compute a simple confidence interval:
-         CI = [prediction * 0.75, prediction * 1.25]  (placeholder ±25%)
     Returns:
     {
         "predicted_prot": float,
-        "confidence_interval": [float, float],
-        "features_used": dict   # output of extract_all_features for transparency
+        "features_used": dict,  # output of extract_all_features for transparency
+        "translation_context_available": bool
     }
     Note: deltaG from sd03 is NOT available for novel sequences.
     Use mrna_folding_energy (computed via ViennaRNA) as the structural

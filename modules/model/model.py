@@ -1,6 +1,7 @@
 import os
 import pickle
 import sys
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -18,14 +19,22 @@ FEATURE_COLS = [
     "score_minus10", "score_minus35",
     "spacer_length", "spacer_optimal",
     "score_sd", "sd_spacing", "sd_spacing_optimal",
-    "mrna_folding_energy",
+    "sd_unpaired_probability", "start_unpaired_probability",
+    "sd_start_opening_energy",
 ]
 
 
 def load_and_featurize(parquet_path: str) -> pd.DataFrame:
-    df = pd.read_parquet(parquet_path)
+    path = os.path.abspath(parquet_path)
+    stat = os.stat(path)
+    return _load_and_featurize_cached(path, stat.st_mtime_ns, stat.st_size).copy()
+
+
+@lru_cache(maxsize=4)
+def _load_and_featurize_cached(path: str, mtime_ns: int, file_size: int) -> pd.DataFrame:
+    df = pd.read_parquet(path)
     features = df.apply(
-        lambda row: extract_all_features(row["promo_seq"], row["rbs_seq"]),
+        lambda row: extract_all_features(row["promo_seq"], row["rbs_seq"], row["TSS_best"]),
         axis=1,
         result_type="expand",
     )
@@ -120,8 +129,9 @@ def predict_expression(
     promoter_seq: str,
     rbs_seq: str,
     model_path: str = "artifacts/model.pkl",
+    tss_best: int | None = None,
 ) -> dict:
-    features = extract_all_features(promoter_seq, rbs_seq)
+    features = extract_all_features(promoter_seq, rbs_seq, tss_best)
     artifact = _load_model(model_path)
     model = artifact["model"]
     feature_names = artifact["feature_names"]
@@ -131,8 +141,8 @@ def predict_expression(
 
     return {
         "predicted_prot": pred,
-        "confidence_interval": [pred * 0.75, pred * 1.25],
         "features_used": features,
+        "translation_context_available": tss_best is not None,
     }
 
 
@@ -141,11 +151,14 @@ def rank_rbs_for_promoter(
     rbs_library_path: str = "data/raw/sd02.xls",
     model_path: str = "artifacts/model.pkl",
     top_n: int = 5,
+    tss_best: int | None = None,
 ) -> list:
     rbs_df = load_rbs_table(rbs_library_path)
     results = []
     for _, row in rbs_df.iterrows():
-        pred = predict_expression(promoter_seq, row["sequence"], model_path)
+        pred = predict_expression(
+            promoter_seq, row["sequence"], model_path=model_path, tss_best=tss_best
+        )
         results.append({
             "rbs_id": row["rbs_id"],
             "rbs_seq": row["sequence"],

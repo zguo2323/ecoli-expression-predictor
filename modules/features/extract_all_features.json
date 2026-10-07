@@ -1,34 +1,17 @@
 {
   "id": "org.bioe234.extract_all_features",
   "name": "Full Feature Extractor",
-  "description": "Computes all biologically meaningful features for a promoter-RBS pair: GC content, -10 and -35 box scores, spacer length, Shine-Dalgarno score and spacing, and mRNA junction folding energy (via ViennaRNA). Use this for a complete feature breakdown of any construct.",
+  "description": "Computes heuristic promoter/RBS sequence features. If tss_best is absent, first ask once whether the user has an experimentally measured value for a matching construct context (integer offset from the promoter/RBS junction). Use it if supplied; if none, unknown, or the user wants to proceed, omit it and return sequence features without TSS-derived accessibility estimates. With a measured TSS, estimates Shine-Dalgarno and start-codon accessibility by ViennaRNA folding the inferred transcript through a provisional 90-nt sfGFP CDS context. Do not infer or invent a measured TSS, and do not repeat the question after it has been answered for this context.",
   "type": "function",
   "inputs": [
     {"name": "promoter_seq", "type": "string"},
-    {"name": "rbs_seq", "type": "string"}
+    {"name": "rbs_seq", "type": "string"},
+    {"name": "tss_best", "type": "integer", "required": false}
   ],
   "outputs": [{"name": "features", "type": "object"}],
-  "examples": [{
-    "input": {
-      "promoter_seq": "TTGACATATAATCCGG",
-      "rbs_seq": "AAAGAGGAGAAATTTA"
-    },
-    "output": {
-      "gc_promoter": 0.4375,
-      "gc_rbs": 0.25,
-      "score_minus10": 1.0,
-      "score_minus35": 1.0,
-      "spacer_length": 0,
-      "spacer_optimal": false,
-      "score_sd": 0.833,
-      "sd_spacing": 6,
-      "sd_spacing_optimal": true,
-      "mrna_folding_energy": -3.2
-    }
-  }],
   "execution_details": {
     "execution": "run",
     "mcp_name": "extract_all_features",
-    "seq_params": ["promoter_seq", "rbs_seq"]
+    "seq_params": ["promoter_seq", "rbs_seq", "tss_best"]
   }
 }

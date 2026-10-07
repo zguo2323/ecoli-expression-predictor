@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from modules.features.features import build_transcript_context, build_transcript_prefix_to_start
 
 
 def _strip_quotes(val):
@@ -18,9 +19,13 @@ def load_promoter_table(path: str) -> pd.DataFrame:
         "mean.RNA": "mean_RNA",
         "mean.prot": "mean_prot",
         "TSS.best": "TSS_best",
+        "TSS.pct_best": "TSS_pct_best",
     })
     df = df.dropna(subset=["sequence"])
-    return df[["promoter_id", "sequence", "mean_RNA", "mean_prot", "TSS_best"]]
+    return df[[
+        "promoter_id", "sequence", "mean_RNA", "mean_prot",
+        "TSS_best", "TSS_pct_best",
+    ]]
 
 
 def load_rbs_table(path: str) -> pd.DataFrame:
@@ -57,9 +62,9 @@ def build_dataset(
     sd03_path: str,
     output_path: str = "data/processed/constructs.parquet",
 ) -> pd.DataFrame:
-    promoters_df = load_promoter_table(sd01_path)[["promoter_id", "sequence"]].rename(
-        columns={"sequence": "promo_seq"}
-    )
+    promoters_df = load_promoter_table(sd01_path)[[
+        "promoter_id", "sequence", "TSS_best", "TSS_pct_best",
+    ]].rename(columns={"sequence": "promo_seq"})
     rbs_df = load_rbs_table(sd02_path)[["rbs_id", "sequence"]].rename(
         columns={"sequence": "rbs_seq"}
     )
@@ -68,6 +73,19 @@ def build_dataset(
     df = constructs_df.merge(promoters_df, on="promoter_id", how="left")
     df = df.merge(rbs_df, on="rbs_id", how="left")
     df = df.dropna(subset=["promo_seq", "rbs_seq"])
+    df["transcript_prefix_to_start"] = df.apply(
+        lambda row: build_transcript_prefix_to_start(
+            row["promo_seq"], row["rbs_seq"], row["TSS_best"]
+        ),
+        axis=1,
+    )
+    transcript_contexts = df.apply(
+        lambda row: build_transcript_context(
+            row["promo_seq"], row["rbs_seq"], row["TSS_best"]
+        )[0],
+        axis=1,
+    )
+    df["transcript_context"] = transcript_contexts
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_parquet(output_path, index=False)

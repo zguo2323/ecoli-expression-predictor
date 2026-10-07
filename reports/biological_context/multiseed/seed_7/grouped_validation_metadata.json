@@ -1,0 +1,11 @@
+{
+  "folds": 5,
+  "random_state": 7,
+  "bootstrap_replicates": 0,
+  "bootstrap_skipped": true,
+  "bootstrap_seed": null,
+  "n_before_ostir_complete_case_filter": 11696,
+  "n_common_scored": 11672,
+  "n_ostir_unscored": 24,
+  "coverage": 0.9979480164158687
+}

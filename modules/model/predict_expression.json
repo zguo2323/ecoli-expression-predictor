@@ -1,28 +1,18 @@
 {
   "id": "org.bioe234.predict_expression",
   "name": "Expression Level Predictor",
-  "description": "Predicts relative protein expression level in E. coli for a given promoter and RBS sequence pair. Uses a gradient boosted model trained on ~12,000 characterized constructs from Kosuri et al. 2013. Returns predicted protein units and a confidence interval. Works on novel sequences not in the training library.",
+  "description": "Predicts the Kosuri dataset prot target for an E. coli promoter/RBS pair using a model trained on Kosuri et al. If tss_best is absent, first ask once whether the user has an experimentally measured value for a matching construct context (integer offset from the promoter/RBS junction). Use it if supplied; if none, unknown, or the user wants to proceed, omit it and continue without TSS-derived RNA accessibility features. Do not infer or invent a measured TSS, and do not repeat the question after it has been answered for this context. The prediction is not an absolute protein concentration or a calibrated confidence interval.",
   "type": "function",
   "inputs": [
     {"name": "promoter_seq", "type": "string"},
-    {"name": "rbs_seq", "type": "string"}
+    {"name": "rbs_seq", "type": "string"},
+    {"name": "tss_best", "type": "integer", "required": false}
   ],
   "outputs": [
     {"name": "predicted_prot", "type": "number"},
-    {"name": "confidence_interval", "type": "array"},
-    {"name": "features_used", "type": "object"}
+    {"name": "features_used", "type": "object"},
+    {"name": "translation_context_available", "type": "boolean"}
   ],
-  "examples": [{
-    "input": {
-      "promoter_seq": "TTGACATATAATCCGGAATT",
-      "rbs_seq": "AAAGAGGAGAAATTTA"
-    },
-    "output": {
-      "predicted_prot": 3240.5,
-      "confidence_interval": [2430.4, 4050.6],
-      "features_used": {}
-    }
-  }],
   "execution_details": {
     "execution": "run",
     "mcp_name": "predict_expression",
